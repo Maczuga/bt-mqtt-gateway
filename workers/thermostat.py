@@ -3,7 +3,7 @@ import logging
 
 from mqtt import MqttMessage
 
-from workers.base import BaseWorker
+from workers.base import BaseWorker, retry
 import logger
 
 REQUIREMENTS = ['python-eq3bt']
@@ -75,7 +75,7 @@ class ThermostatWorker(BaseWorker):
     for name, thermostat in self.devices.items():
       _LOGGER.debug("Updating %s device '%s' (%s)", repr(self), name, thermostat._conn._mac)
       try:
-        ret += self.update_device_state(name, thermostat)
+        ret += retry(self.update_device_state, exception_type=btle.BTLEException)(name, thermostat)
       except btle.BTLEException as e:
         logger.log_exception(_LOGGER, "Error during update of %s device '%s' (%s): %s", repr(self), name, thermostat._conn._mac, type(e).__name__, suppress=True)
     return ret
@@ -100,13 +100,13 @@ class ThermostatWorker(BaseWorker):
 
     _LOGGER.info("Setting %s to %s on %s device '%s' (%s)", method, value, repr(self), device_name, thermostat._conn._mac)
     try:
-      setattr(thermostat, method, value)
+      retry(setattr, exception_type=btle.BTLEException)(thermostat, method, value)
     except btle.BTLEException as e:
       logger.log_exception(_LOGGER, "Error setting %s to %s on %s device '%s' (%s): %s", method, value, repr(self), device_name, thermostat._conn._mac, type(e).__name__)
       return []
 
     try:
-      return self.update_device_state(device_name, thermostat)
+      return retry(self.update_device_state, exception_type=btle.BTLEException)(device_name, thermostat)
     except btle.BTLEException as e:
       logger.log_exception(_LOGGER, "Error during update of %s device '%s' (%s): %s", repr(self), device_name, thermostat._conn._mac, type(e).__name__, suppress=True)
       return []
