@@ -2,7 +2,7 @@ import logging
 
 from mqtt import MqttMessage
 
-from workers.base import BaseWorker
+from workers.base import BaseWorker, retry
 import logger
 
 REQUIREMENTS = ['git+https://github.com/cybe/mithermometer.git@cd8dba297927da823fbfa8f50bd97393ea6a93c1#egg=mithermometer']
@@ -27,7 +27,7 @@ class MithermometerWorker(BaseWorker):
     for name, poller in self.devices.items():
       _LOGGER.debug("Updating %s device '%s' (%s)", repr(self), name, poller._mac)
       try:
-        ret += self.update_device_state(name, poller)
+        ret += retry(self.update_device_state, exception_type=BluetoothBackendException)(name, poller)
       except BluetoothBackendException as e:
         logger.log_exception(_LOGGER, "Error during update of %s device '%s' (%s): %s", repr(self), name, poller._mac, type(e).__name__, suppress=True)
     return ret
