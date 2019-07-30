@@ -49,9 +49,9 @@ def retry(_func=None, *, exception_type=Exception):
     @functools.wraps(func)
     def wrapped_retry(*args, **kwargs):
       retryer = tenacity.Retrying(
-          wait=tenacity.wait_exponential(min=4),
+          wait=tenacity.wait_exponential(min=3),
           retry=tenacity.retry_if_exception_type(exception_type),
-          stop=tenacity.stop_after_attempt(3),
+          stop=tenacity.stop_after_attempt(5),
           reraise=True,
           before_sleep=log_retry)
       return retryer(func, *args, **kwargs)
