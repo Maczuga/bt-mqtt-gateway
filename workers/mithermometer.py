@@ -65,6 +65,8 @@ class MithermometerWorker(BaseWorker):
         ret += retry(self.update_device_state, exception_type=BluetoothBackendException)(name, data["poller"])
       except BluetoothBackendException as e:
         logger.log_exception(_LOGGER, "Error during update of %s device '%s' (%s): %s", repr(self), name, data["mac"], type(e).__name__, suppress=True)
+      except TimeoutError as e:
+        logger.log_exception(_LOGGER, "Timeout during update of %s device '%s' (%s): %s", repr(self), name, data["mac"], type(e).__name__, suppress=True)
     return ret
 
   def update_device_state(self, name, poller):
